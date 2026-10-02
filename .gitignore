@@ -1,3 +1,6 @@
+# project directories
+data/hydrography/NSI/raw/
+
 # History files
 .Rhistory
 .Rapp.history
