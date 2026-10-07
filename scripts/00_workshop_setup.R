@@ -21,8 +21,13 @@ rm(list = ls())
 # install.packages("SSNbler")
 
 # workshop organizers recommend installing the latest versions from GitHub ("develop" branches are also available)
-# remotes::install_github("USEPA/SSN2", ref = "main")
-# remotes::install_github("pet221/SSNbler", ref = "main")
+remotes::install_github("USEPA/SSN2",     ref = "main")
+remotes::install_github("pet221/SSNbler", ref = "main")
+
+# ----------------
+# LOAD PACKAGES
+library(SSN2)
+library(SSNbler)
 
 # -----------------
 # PACKAGE CITATIONS
@@ -33,11 +38,6 @@ citation("SSNbler")
 # PACKAGE VERSIONS
 packageVersion("SSN2")
 packageVersion("SSNbler")
-
-# ----------------
-# LOAD PACKAGES
-library(SSN2)
-library(SSNbler)
 
 # -------------------
 # SESSION INFORMATION

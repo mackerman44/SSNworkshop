@@ -20,21 +20,27 @@ library(sf)
 library(here)
 library(janitor)
 
+# ------------
+# SSN Citation
+citation(package = "SSN2")
+
 # -------------------
 # PROJECT DIRECTORIES
 
 # root directory of the R project
 here() 
 
-# path to example middle fork .ssn dataset stored within this project
-mf_ssn_path = here("data", "ssn", "MiddleForkTemperature", "MiddleForkTemperature.ssn")
+# path to vignette middle fork 04 .ssn dataset stored in this project
+mf04_ssn_path = here("data", "ssn", "MiddleFork04", "MiddleFork04.ssn")
+
+# alternative: path to larger, downloaded middle fork .ssn dataset stored in this project
+# path = here("data", "ssn", "MiddleForkTemperature", "MiddleForkTemperature.ssn")
 
 # ensure that the directory exists
-dir.exists(mf_ssn_path)
+dir.exists(mf04_ssn_path)
 
 # ---------------
 # IMPORT SSN DATA
-
 # An SSN object contains:
 #   $edges = stream network
 #   $obs   = observation sites
@@ -44,9 +50,10 @@ dir.exists(mf_ssn_path)
 # import the Middle Fork 2004 stream temperature dataset
 ?ssn_import
 mf04p = ssn_import(
-  path      = mf_ssn_path,
-  predpts   = c("pred1km", "CapeHorn"),
-  overwrite = TRUE
+  path        = mf04_ssn_path,
+  include_obs = TRUE, 
+  predpts     = c("pred1km", "CapeHorn"),
+  overwrite   = TRUE
 )
 ?MiddleFork04.ssn # metadata for the Middle Fork example dataset
 
@@ -93,25 +100,25 @@ st_crs(mf04p$edges)
 st_crs(mf04p$obs)
 st_crs(mf04p$preds$pred1km)
 
-# NOTE: the observation layer in this copy of the example dataset imports without CRS metadata. The coordinates are in the same coordinate system as the
+# NOTE: the observation layer in the MiddleForkTemperature.ssn dataset imports without CRS metadata. The coordinates are in the same coordinate system as the
 # stream network, so assign the network CRS to the observation layer. st_crs() assigns CRS metadata; it does NOT transform coordinates.
-if (is.na(st_crs(mf04p$obs))) {
-  st_crs(mf04p$obs) = st_crs(mf04p$edges)
-}
-st_crs(mf04p$obs) # confirm CRS
+# if (is.na(st_crs(mf04p$obs))) {
+#   st_crs(mf04p$obs) = st_crs(mf04p$edges)
+# }
+# st_crs(mf04p$obs) # confirm CRS
 
 # -----------------------
 # PLOT THE STREAM NETWORK
-mf_p <- ggplot() +
+mf_p = ggplot() +
   geom_sf(data = mf04p$edges) +
   geom_sf(data = mf04p$preds$pred1km, shape = 17, color = "blue") +
+  #geom_sf(data = mf04p$preds$CapeHorn, shape = 17, color = "pink") +
   geom_sf(data = mf04p$obs, color = "brown", size = 2) +
   labs(
     title = "Middle Fork 2004 SSN Example",
     subtitle = "Observation and 1-km prediction sites"
   ) +
   theme_bw()
-
 mf_p
 
 # ------------------------------
@@ -132,23 +139,20 @@ mf04p$obs |>
 #   ratio   = relative position of a site along its edge
 #   netgeom = protected representation of network topology/location
 
-# -----------------------------
-# EXPLORE THE RESPONSE VARIABLE
-summary(mf04p$obs$Summer_mn) # Summer_mn = mean summer stream temperature (degrees C)
+# ------------------------
+# EXPLORE SUMMER MEAN TEMP (RESPONSE?)
+summary(mf04p$obs$Summer_mn) # Summer_mn = overall mean summer stream temperature (degrees C) during deployment
 
 # distribution of summer mean stream temps
 mn_summer_p = mf04p$obs |>
   ggplot(aes(x = Summer_mn)) +
-  geom_histogram(
-    bins  = 20,
-    fill  = "steelblue",
-    color = "white"
-  ) +
+  geom_histogram(bins  = 20, fill  = "steelblue", color = "white") +
   labs(
-    x = "Mean Summer Stream Temperature (°C)",
+    x = "Mean Summer Stream Temp (°C)",
     y = "Number of Sites",
   ) +
   theme_bw()
+mn_summer_p
 
 # plot summer mean temperature at observation sites
 mf_temp_p = ggplot() +
@@ -159,11 +163,10 @@ mf_temp_p = ggplot() +
   # set color scale; note min and max values (max below max observed in mf04p$obs$Summer_mn)
   scale_color_viridis_c(limits = c(0, 17), option = "H") +
   labs(
-    title = "Summer Mean Stream Temperature",
-    color = "Temperature (C)"
+    title = "Mean Summer Stream Temp",
+    color = "Temp (C)"
   ) +
   theme_bw()
-
 mf_temp_p
 
 # ----------------------------------
@@ -224,6 +227,8 @@ coef(ssn_mod)                  # fixed-effect coefficients
 varcomp(ssn_mod)               # proportion of variability attributed to fixed effects and each covariance component
 tidy(ssn_mod, conf.int = TRUE) # tidy fixed-effect estimates and confidence intervals
 glance(ssn_mod)                # overall model-fit statistics
+
+### CONTINUE HERE
 
 # --------------------------------
 # COMPARE COVARIANCE STRUCTURES
