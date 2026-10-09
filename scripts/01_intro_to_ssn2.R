@@ -224,11 +224,9 @@ ssn_mod = ssn_lm(
 # EXAMINE MODEL RESULTS
 summary(ssn_mod)               # model summary
 coef(ssn_mod)                  # fixed-effect coefficients
-varcomp(ssn_mod)               # proportion of variability attributed to fixed effects and each covariance component
+varcomp(ssn_mod)               # proportion of variability attributed to fixed effects and each covariance component (sum to one)
 tidy(ssn_mod, conf.int = TRUE) # tidy fixed-effect estimates and confidence intervals
 glance(ssn_mod)                # overall model-fit statistics
-
-### CONTINUE HERE
 
 # --------------------------------
 # COMPARE COVARIANCE STRUCTURES
@@ -268,7 +266,6 @@ ml_mod2 = ssn_lm(
   additive      = "afvArea",
   estmethod     = "ml"
 )
-
 glances(ml_mod, ml_mod2)
 
 # --------------------------
@@ -287,14 +284,8 @@ loocv_mod2$RMSPE
 
 # add fitted values, residuals, leverage, Cook's distance, etc.
 aug_ssn_mod = augment(ssn_mod)
-head(aug_ssn_mod)
+aug_ssn_mod
 names(aug_ssn_mod)
-
-# standard diagnostic plot: fitted values vs standardized residuals
-plot(ssn_mod, which = 1)
-
-# SSN2 provides six standard diagnostic plots
-# plot(ssn_mod, which = 1:6)
 
 # optional: save diagnostics as a geopackage
 # st_write(
@@ -303,12 +294,18 @@ plot(ssn_mod, which = 1)
 #   delete_dsn = TRUE
 # )
 
+# standard diagnostic plot: fitted values vs standardized residuals
+plot(ssn_mod, which = 1)
+
+# SSN2 provides six standard diagnostic plots
+# plot(ssn_mod, which = 1:6)
+
 # ----------------------
 # PREDICTION (KRIGING)
 
 # predict summer mean temperature at the 1-km prediction sites
 pred_1km = predict(
-  ssn_mod,
+  ssn_mod, 
   newdata = "pred1km"
 )
 head(pred_1km)
@@ -319,6 +316,7 @@ aug_preds = augment(
   newdata = "pred1km"
 )
 head(aug_preds)
+aug_preds[, ".fitted"]
 
 # map predicted summer mean stream temperature
 mf_pred_p = ggplot() +
@@ -369,7 +367,7 @@ ssn_init = ssn_lm(
 ssn_init
 
 # --------------
-# RANDOM EFFECTS (error here)
+# RANDOM EFFECTS
 
 # random intercept for each stream network 
 ssn_rand = ssn_lm(
@@ -382,7 +380,6 @@ ssn_rand = ssn_lm(
   random        = ~ as.factor(netID)
 )
 ssn_rand
-
 
 # -----------------
 # PARTITION FACTORS
@@ -453,28 +450,10 @@ loocv_nb$RMSPE
 # ==========================
 
 # specify covariance parameters
-tu_params = tailup_params(
-  "exponential",
-  de = 0.4,
-  range = 1e5
-)
-
-td_params = taildown_params(
-  "spherical",
-  de = 0.1,
-  range = 1e6
-)
-
-euc_params = euclid_params(
-  "gaussian",
-  de = 0.2,
-  range = 1e3
-)
-
-nug_params = nugget_params(
-  "nugget",
-  nugget = 0.1
-)
+tu_params  = tailup_params("exponential", de = 0.4, range = 1e5)
+td_params  = taildown_params("spherical", de = 0.1, range = 1e6)
+euc_params = euclid_params("gaussian", de = 0.2, range = 1e3)
+nug_params = nugget_params("nugget", nugget = 0.1)
 
 # ------------------------
 # SIMULATE GAUSSIAN DATA

@@ -128,7 +128,6 @@ lsn_p =  ggplot() +
   )
 lsn_p
 
-
 # -------------------------------
 # INCORPORATE SITES INTO THE LSN
 # sites_to_lsn() snaps point locations to the nearest LSN edge and adds:
@@ -151,7 +150,6 @@ pred_sfsr = sites_to_lsn(
   overwrite      = TRUE
 )
 summary(pred_sfsr$snapdist) # check snapping distances
-
 
 # ---------------------------
 # CALCULATE UPSTREAM DISTANCE
@@ -219,7 +217,6 @@ ggplot() +
 names(edges)
 
 # Once a suitable cumulative watershed-area variable has been identified:
-
 summary(edges$TotDASqKM)
 sum(is.na(edges$TotDASqKM))
 sum(edges$TotDASqKM == 0)
