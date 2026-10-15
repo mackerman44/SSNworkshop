@@ -86,7 +86,7 @@ plot(tg)
 ssn_mod <- ssn_lm(
   formula = Summer_mn ~ ELEV_DEM + AREAWTMAP,
   ssn.object = mf04p,
-  tailup_type = "exponential",
+  tailup_type = "exponential", # instructors often just start with "exponential" for tailup, taildown, and euclid
   taildown_type = "spherical",
   euclid_type = "gaussian",
   additive = "afvArea"
@@ -137,7 +137,7 @@ ml_mod <- ssn_lm(
   taildown_type = "spherical",
   euclid_type = "gaussian",
   additive = "afvArea",
-  estmethod = "ml"
+  estmethod = "ml" # IMPORTANT WHEN CHANGING FIXED EFFECTS 
 )
 
 ## Model without ELEV_DEM
@@ -236,7 +236,7 @@ ssn_rand <- ssn_lm(
   taildown_type = "spherical",
   euclid_type = "gaussian",
   additive = "afvArea",
-  random = ~ as.factor(netID)
+  random = ~ as.factor(netID) # e.g., repeated measures
 )
 ssn_rand
 
@@ -268,7 +268,7 @@ ggplot() +
 ## Fit a poisson regression model with tailup and taildown components
 ssn_pois <- ssn_glm(
   formula = C16 ~ ELEV_DEM + AREAWTMAP,
-  family = "poisson",
+  family = "poisson", # for counts
   ssn.object = mf04p,
   tailup_type = "epa",
   taildown_type = "mariah",
@@ -340,3 +340,4 @@ sims <- ssn_simulate(
 ## Inspect first few simulations
 head(sims)
 
+### END SCRIPT

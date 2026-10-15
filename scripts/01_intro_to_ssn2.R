@@ -57,6 +57,8 @@ mf04p = ssn_import(
 )
 ?MiddleFork04.ssn # metadata for the Middle Fork example dataset
 
+# ADD ssn_check()
+
 # ----------------------
 # EXPLORE THE SSN OBJECT
 summary(mf04p)   # overall summary
