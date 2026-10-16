@@ -27,7 +27,7 @@ library(SSNbler)
 
 # -------------------
 # LOAD PROCESSED DATA
-nsi_flow_sfsr = st_read(here("data", "hydrography", "NSI", "processed", "nsi_flow_sfsr.gpkg"))
+nsi_flow_sfsr = st_read(here("data", "hydrography", "NSI", "processed", "nsi_flow_sfsr_streamcat.gpkg"))
 sfsr_obs = st_read(here("data", "norwest", "processed", "sfsr_norwest_obs.gpkg"))
 sfsr_pred = st_read(here("output", "ma_examp", "sfsr_pred_1km.gpkg"))
 
