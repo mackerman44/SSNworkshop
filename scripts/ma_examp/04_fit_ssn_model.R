@@ -17,10 +17,10 @@
 rm(list = ls())
 
 # load packages
-library(tidyverse)
-library(SSN2)
-library(sf)
 library(here)
+library(tidyverse)
+library(sf)
+library(SSN2)
 
 # -------------------
 # IMPORT ASSEMBLED SSN

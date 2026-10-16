@@ -68,8 +68,8 @@ stopifnot(!any(sfsr_pred$OBSPRED_ID %in% sfsr_obs$OBSPRED_ID))
 # plot prediction points and observation locations
 ggplot() +
   geom_sf(data = sfsr_nsi, color = "steelblue", linewidth = 0.3) +
-  geom_sf(data = sfsr_pred, color = "orange", size = 0.5) +
-  geom_sf(data = sfsr_obs, color = "red", size = 0.8) +
+  geom_sf(data = sfsr_pred, color = "orange", size = 1) +
+  geom_sf(data = sfsr_obs, color = "red", size = 2) +
   theme_bw()
 
 # write prediction points to file

@@ -273,6 +273,30 @@ site_list = afv_sites(
 summary(site_list$obs_sfsr$afvArea)
 summary(site_list$pred_sfsr$afvArea)
 
+# -------------------------------------
+# ATTACH STREAM COVARIATES TO SSN SITES
+# Use the LSN edge identifier (rid) to attach covariates to observation and prediction points
+
+# select covariates from stream edges
+edge_covars = edges |>
+  st_drop_geometry() |>
+  select(rid, elevws, precip9120ws)
+
+# verify one record per edge
+stopifnot(!anyDuplicated(edge_covars$rid))
+
+# attach covariates to observations
+site_list$obs_sfsr = site_list$obs_sfsr |>
+  left_join(edge_covars, by = "rid")
+
+# attach covariates to prediction points
+site_list$pred_sfsr = site_list$pred_sfsr |>
+  left_join(edge_covars, by = "rid")
+
+# inspect covariates
+summary(site_list$obs_sfsr[, c("elevws", "precip9120ws")])
+summary(site_list$pred_sfsr[, c("elevws", "precip9120ws")])
+
 # ------------------------
 # ASSEMBLE THE SSN OBJECT
 # ssn_assemble() converts the processed LSN into the .ssn structure used by SSN2.
