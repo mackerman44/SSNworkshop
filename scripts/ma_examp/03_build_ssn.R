@@ -297,6 +297,38 @@ site_list$pred_sfsr = site_list$pred_sfsr |>
 summary(site_list$obs_sfsr[, c("elevws", "precip9120ws")])
 summary(site_list$pred_sfsr[, c("elevws", "precip9120ws")])
 
+# ------------------------------------
+# FILTER OBSERVATIONS FOR SSN MODELING
+# Remove observations missing the response or model covariates (IMPORTANT TO RECONSIDER LATER)
+
+# inspect missing values before filtering
+site_list$obs_sfsr |>
+  st_drop_geometry() |>
+  summarise(
+    n_total = n(),
+    n_missing_temp = sum(is.na(meanDailyMax)),
+    n_missing_elev = sum(is.na(elevws)),
+    n_missing_precip = sum(is.na(precip9120ws))
+  )
+
+# retain complete observations for modeling
+site_list$obs_sfsr = site_list$obs_sfsr |>
+  filter(
+    is.finite(meanDailyMax),
+    is.finite(elevws),
+    is.finite(precip9120ws)
+  )
+
+# check remaining observations
+nrow(site_list$obs_sfsr)
+summary(site_list$obs_sfsr$meanDailyMax)
+
+# verify prediction covariates are complete
+stopifnot(
+  all(is.finite(site_list$pred_sfsr$elevws)),
+  all(is.finite(site_list$pred_sfsr$precip9120ws))
+)
+
 # ------------------------
 # ASSEMBLE THE SSN OBJECT
 # ssn_assemble() converts the processed LSN into the .ssn structure used by SSN2.
