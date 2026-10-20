@@ -2,13 +2,13 @@
 #
 # Author(s): Mike Ackerman
 #
-# Purpose: Prepare NorWeST observed stream temperature data for the South Fork Salmon River SSN example.
+# Purpose: Prepare NorWeST observed stream temperature data for the South Fork Salmon River.
 #
 # Created: October 15, 2026
-#   Last modified:
+#   Last modified: October 20, 2026
 #
-# NOTES: Here, I'm going to summarize August temperatures by deployment (site-year),
-#        join the summaries to observation locations, and trim to South Fork Salmon River.
+# NOTES: I'm going to summarize summer (e.g., August) stream temperatures by deployment (site-year) from 
+#   legacy NorWeST data, join the summaries to observation locations, and trim to the South Fork Salmon River.
 
 # clear environment
 rm(list = ls())
