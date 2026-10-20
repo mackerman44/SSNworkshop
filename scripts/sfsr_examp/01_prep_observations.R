@@ -20,54 +20,38 @@ library(sf)
 library(readxl)
 library(lubridate)
 
-# --------------
-# LOAD NSI DATA
-sfsr_nsi = st_read(here("data", "hydrography", "NSI", "processed", "nsi_flow_sfsr.gpkg"))
+# ----------------------
+# LOAD SPATIAL REFERENCE
 
-# --------------------------
-# LOAD POPULATION BOUNDARIES
-load(here("data", "steelhead_pops.rda"))
-sth_pop = st_transform(sth_pop, st_crs(sfsr_nsi))
-st_crs(sth_pop) == st_crs(sfsr_nsi)
+# load processed NSI hydrography and study area
+nsi_flow_sfsr = st_read(here("data", "NSI", "processed", "nsi_flow_sfsr.gpkg"))
+study_area    = st_read(here("data", "study_areas", "study_area_sfsr.gpkg"))
 
-# inspect
-sort(unique(sth_pop$TRT_POPID))   # all available populations
-pop_polys = sth_pop |>            # populations of interest
-  filter(TRT_POPID %in% c("SFSEC-s", "SFMAI-s"))
-
-# map
-ggplot() +
-  geom_sf(data = pop_polys, aes(fill = TRT_POPID)) +
-  theme_bw()
-
-# dissolve pop_polys into a single study area
-study_area = pop_polys |>
-  summarise()
-
-rm(sth_pop, pop_polys)
+# confirm the coordinate reference systems match
+stopifnot(st_crs(study_area) == st_crs(nsi_flow_sfsr))
 
 # -----------------------------
 # PREP NORWEST OBSERVATION DATA
-nrwst_dir = "C:/Users/mikea/OneDrive - nezperce365/Workspace/norwest/"
+norwest_dir = "C:/Users/mikea/nezperce365/MFO Research - General/Riverscapes/Data/Temp/NorWeSTv2"
 
 # load daily temperature summaries
-nrwst_daily = read_xlsx(
+norwest_daily = read_xlsx(
   path = file.path(
-    nrwst_dir,
+    norwest_dir,
+    "NorWeST_v2_ObservedStreamTempDailySummaries_Salmon_AllDays",
     "NorWeST_v2_ObservedStreamTempDailySummaries_Salmon_AllDays.xlsx"
   ),
   sheet = "DailyMetricOutputForWeb"
 )
 
-# summarize daily temperatures by deployment (site-year)
-obs_df = nrwst_daily |>
+# summarize August temperatures by deployment (site-year)
+obs_df = norwest_daily |>
   mutate(
     year = year(SampleDate),
-    month = month(SampleDate),
     across(c(DailyMean, DailyMax), ~ na_if(.x, -9999))
   ) |>
-  # let's just use August data
-  filter(month == 8) |>
+  # here, we'll just use August temperature data
+  filter(month(SampleDate) == 8) |>
   group_by(OBSPRED_ID, year) |>
   summarise(
     nDaysMean     = sum(!is.na(DailyMean)),
@@ -86,64 +70,130 @@ obs_df = nrwst_daily |>
     )
   )
 
-# check whether deployments are unique
+# NOTE: OBSPRED_ID should be unique to a site-year deployment, not a site or locations
+
+# verify whether OBSPRED_ID uniquely identifies site-year deployments
 obs_df |>
   count(OBSPRED_ID) |>
   filter(n > 1)
 
 # load observation locations
-salmon_obs_pts = st_read(
+obs_pts = st_read(
   file.path(
-    nrwst_dir,
+    norwest_dir,
     "NorWeSTv2_Salmon_ObservedTempPoints",
     "NorWeSTv2_Salmon_ObservedTempPoints.shp"
   )
 ) |>
-  st_transform(st_crs(sfsr_nsi))
+  # transform CRS to share same CRS as hydrography
+  st_transform(st_crs(nsi_flow_sfsr))
 
-# join temperature metrics to spatial observation locations
-sfsr_obs = salmon_obs_pts |>
+# inspect
+ggplot() +
+  geom_sf(data = study_area, fill = NA, linewidth = 0.6) +
+  geom_sf(data = obs_pts, size = 0.5, color = "red") +
+  theme_bw()
+
+# -----------------------------------
+# SOME QC OF NORWEST OBSERVATION DATA
+
+# identify site-year deployments WITHOUT August daily temperature data
+unmatched_obs = obs_pts |>
+  st_filter(study_area) |>
+  # returns site-year deployments where OBSPRED_ID isn't in obs_df
+  anti_join(obs_df, by = "OBSPRED_ID")
+
+# by sample year, site-year deployments WITHOUT August daily temperature data
+unmatched_obs |>
+  st_drop_geometry() |>
+  count(SampleYear) |>
+  arrange(SampleYear)
+
+# check whether unmatched observations have daily records in other months
+unmatched_check = unmatched_obs |>
+  st_drop_geometry() |>
+  select(OBSPRED_ID, SampleYear) |>
+  left_join(
+    norwest_daily |>
+      mutate(month = lubridate::month(SampleDate)) |>
+      group_by(OBSPRED_ID) |>
+      summarise(
+        n_daily = n(),
+        months = paste(sort(unique(month)), collapse = ", "),
+        .groups = "drop"
+      ),
+    by = "OBSPRED_ID"
+  )
+
+# inspect results
+unmatched_check |>
+  count(n_daily, months, sort = TRUE)
+
+# ----------------------------------------------
+# SPATIAL JOIN DEPLOYMENT SUMMARIES TO LOCATIONS
+
+# join temperature summary to spatial site-year observation locations
+obs_sfsr = obs_pts |>
   select(OBSPRED_ID, PERMA_FID, COMID, GNIS_NAME, SampleYear) |>
-  left_join(obs_df, by = "OBSPRED_ID") |>
+  # inner_join excludes observations without a OBSPRED_ID in obs_df
+  inner_join(
+    obs_df, 
+    by = "OBSPRED_ID",
+    relationship = "one-to-one"
+  ) |>
   # trim to study area
   st_filter(study_area)
 
 # inspect the join
-nrow(sfsr_obs)
-sum(!is.na(sfsr_obs$meanDailyMean))
-sum(is.na(sfsr_obs$meanDailyMean))
+ggplot() +
+  geom_sf(data = nsi_flow_sfsr, linewidth = 0.3, color = "steelblue") +
+  geom_sf(data = obs_sfsr, size = 2, color = "red") +
+  geom_sf(data = study_area, fill = NA, linewidth = 0.6) +
+  theme_bw()
+
+# more inspection
+nrow(obs_sfsr)    # unique site-year deployments
+sum(!is.na(obs_sfsr$meanDailyMean))
+sum(is.na(obs_sfsr$meanDailyMean))
 
 # check deployment year against date-derived year
-sfsr_obs |>
+obs_sfsr |>
   st_drop_geometry() |>
   filter(!is.na(year), SampleYear != year) |>
   select(OBSPRED_ID, PERMA_FID, SampleYear, year)
 
 # examine temperature metrics
-summary(sfsr_obs$meanDailyMean)
-summary(sfsr_obs$meanDailyMax)
-summary(sfsr_obs$maxDailyMax)
+summary(obs_sfsr$meanDailyMean)
+summary(obs_sfsr$meanDailyMax)
+summary(obs_sfsr$maxDailyMax)
+hist(obs_sfsr$nMean18)
+hist(obs_sfsr$nMax18)
 
 # check unique observation IDs before saving
-stopifnot(!anyDuplicated(sfsr_obs$OBSPRED_ID))
+stopifnot(!anyDuplicated(obs_sfsr$OBSPRED_ID))
 
 # plot observation locations
 ggplot() +
   geom_sf(data = study_area, fill = NA) +
-  geom_sf(data = sfsr_nsi, color = "steelblue", linewidth = 0.3) +
+  geom_sf(data = nsi_flow_sfsr, color = "steelblue", linewidth = 0.3) +
   geom_sf(
-    data = filter(sfsr_obs, !is.na(meanDailyMean)),
+    data = filter(obs_sfsr, !is.na(meanDailyMean)),
     aes(color = meanDailyMean),
     size = 1.5
   ) +
-  scale_color_viridis_c(na.value = "grey70") +
+  scale_color_viridis_c(option = "turbo", na.value = "grey70") +
   theme_bw() +
-  labs(color = "Mean Daily\nTemperature (°C)")
+  labs(
+    title = "NorWeST August Stream Observations — SFSR",
+    color = "Mean Daily Mean\nTemperature (°C)"
+  )
 
-# write observations to file
+# -----------------
+# SAVE OBSERVATIONS
+
 # retain observations with missing August metrics for now; filter when modeling
 st_write(
-  sfsr_obs,
+  obs_sfsr,
   here("data", "norwest", "processed", "sfsr_norwest_obs.gpkg"),
   delete_dsn = TRUE
 )

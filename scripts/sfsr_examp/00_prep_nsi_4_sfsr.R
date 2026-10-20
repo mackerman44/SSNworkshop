@@ -120,4 +120,10 @@ st_write(
   delete_dsn = TRUE
 )
 
+# save study area
+st_write(
+  study_area,
+  here("data", "study_areas", "study_area_sfsr.gpkg")
+)
+
 ### END SCRIPT
