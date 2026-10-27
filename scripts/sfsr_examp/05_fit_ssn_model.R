@@ -178,7 +178,7 @@ stopifnot(nrow(sfsr_ssn$obs) == nrow(obs_complete))
 # distance matrices; these are unnecessary for individual predictions
 ssn_create_distmat(
   ssn.object    = sfsr_ssn,
-  predpts       = pred_names,
+  predpts       = c("pred_nsi_sfsr", "pred_1km_sfsr"),
   among_predpts = FALSE,
   overwrite     = TRUE
 )
