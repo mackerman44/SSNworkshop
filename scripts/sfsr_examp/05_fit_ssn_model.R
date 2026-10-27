@@ -374,7 +374,7 @@ ggplot() +
 
 # predict separately at both prediction datasets
 # include standard errors and 95% prediction intervals
-pred_results = lapply(pred_names, function(nm) {
+pred_results = lapply(c("pred_nsi_sfsr", "pred_1km_sfsr"), function(nm) {
   augment(
     final_mod,
     newdata = nm,
@@ -384,7 +384,7 @@ pred_results = lapply(pred_names, function(nm) {
   )
 })
 
-names(pred_results) = pred_names
+names(pred_results) = c("pred_nsi_sfsr", "pred_1km_sfsr")
 
 # inspect predictions
 lapply(pred_results, head)
